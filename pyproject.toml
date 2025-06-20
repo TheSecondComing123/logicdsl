@@ -1,0 +1,11 @@
+[project]
+name = "logicdsl"
+version = "0.1.0"
+description = "A tiny Python DSL for finite-domain logic solving"
+authors = [{ name = "Alan Bagel", email = "jiuprogrammer@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,86 @@
+"""
+Integration tests for logicdsl.solver.
+"""
+
+import pytest
+
+from logicdsl import LogicSolver, Var, distinct
+
+
+def test_basic_optimal_solution():
+	"""
+	x ∈ [1..9], y ∈ {2,4,6,8}
+	Hard: x + y = 10
+	Maximize: x * y
+	"""
+	x = Var("x") << (1, 9)
+	y = Var("y") << {2, 4, 6, 8}
+	
+	S = LogicSolver()
+	S.add_variables([x, y])
+	S.require(x + y == 10, "sum10")
+	S.maximize(x * y)
+	
+	sol = S.solve()
+	best = sol["assignment"]
+	assert best == {"x": 4, "y": 6} or best == {"x": 6, "y": 4}
+	assert sol["penalty"] == 0
+	assert sol["objectives"][0] == best["x"] * best["y"]
+
+
+def test_soft_penalty_and_objective():
+	"""
+	Add a soft constraint z == 0 (penalty 5) and an objective to minimize z.
+	Optimal solution should choose z = 0 to avoid penalty if possible.
+	"""
+	x = Var("x") << (1, 5)
+	z = Var("z") << {0, 1}
+	
+	S = LogicSolver()
+	S.add_variables([x, z])
+	# hard: x even
+	S.require(x % 2 == 0, "x_even")
+	# soft: prefer z == 0
+	S.prefer(z == 0, penalty=5, name="z_zero")
+	# objective: minimize z
+	S.minimize(z)
+	
+	sol = S.solve()
+	assert sol["assignment"]["z"] == 0
+	assert sol["penalty"] == 0
+	# objective list has one element (min z) → value should be 0
+	assert sol["objectives"][0] == 0
+
+
+def test_distinct_constraint_in_solver():
+	"""
+	Three vars in [1..3] must be distinct, maximize sum.
+	Best assignment should be 1,2,3 in some order → sum 6.
+	"""
+	a, b, c = [Var(v) << (1, 3) for v in "abc"]
+	
+	S = LogicSolver()
+	S.add_variables([a, b, c])
+	S.require(distinct([a, b, c]), "all_diff")
+	S.maximize(a + b + c)
+	
+	sol = S.solve()
+	values = list(sol["assignment"].values())
+	assert sorted(values) == [1, 2, 3]
+	assert sum(values) == 6
+	assert sol["penalty"] == 0
+	assert sol["objectives"][0] == 6
+
+
+def test_unsat_raises():
+	"""
+	Impossible constraint should raise RuntimeError.
+	"""
+	x = Var("x") << {1}
+	y = Var("y") << {2}
+	S = LogicSolver()
+	S.add_variables([x, y])
+	S.require(x + y == 100, "impossible")
+	
+	with pytest.raises(RuntimeError):
+		S.solve()
