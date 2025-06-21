@@ -32,3 +32,16 @@ print(solver.pretty(solution))
 
 Running the above prints the best assignment of `x` and `y` that sums to 10 while maximizing their product.
 
+### Objective Modes
+
+By default the solver optimizes objectives lexicographically.  To combine
+multiple objectives using a weighted sum pass ``objective_mode="sum"`` when
+creating the solver.  Each call to ``maximize``/``minimize`` accepts an optional
+``weight`` parameter used in the sum.
+
+```python
+solver = LogicSolver(objective_mode="sum")
+solver.maximize(x, weight=1)
+solver.maximize(y, weight=2)
+```
+

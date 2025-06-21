@@ -114,3 +114,28 @@ def test_all_solutions_penalty_and_objective():
 	assert sols[1]["assignment"]["x"] == 1
 	assert sols[1]["penalty"] == 0
 	assert sols[1]["objectives"][0] == 1
+
+
+def test_objective_mode_sum():
+	"""Weighted-sum objectives choose different assignment than lexicographic."""
+	x = Var("x") << {0, 1}
+	y = Var("y") << {0, 1}
+
+	constraint = sum_of([x, y]) <= 1
+
+	S_lex = LogicSolver()
+	S_lex.require(constraint)
+	S_lex.maximize(x)
+	S_lex.maximize(y)
+
+	sol_lex = S_lex.solve()
+	assert sol_lex["assignment"] == {"x": 1, "y": 0}
+
+	S_sum = LogicSolver(objective_mode="sum")
+	S_sum.require(constraint)
+	S_sum.maximize(x, weight=1)
+	S_sum.maximize(y, weight=2)
+
+	sol_sum = S_sum.solve()
+	assert sol_sum["assignment"] == {"x": 0, "y": 1}
+	assert sol_sum["objective"] == 2

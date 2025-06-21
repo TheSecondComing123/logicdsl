@@ -7,9 +7,9 @@ from .core import BoolExpr, Expr, Var
 
 
 def collect_vars(expr: Expr | BoolExpr) -> List[Var]:
-        """Return vars referenced in an expression tree in deterministic order."""
-        vars_set: Set[Var] = set(getattr(expr, "_vars", set()))
-        return sorted(vars_set, key=lambda v: v.name)
+	"""Return vars referenced in an expression tree in deterministic order."""
+	vars_set: Set[Var] = set(getattr(expr, "_vars", set()))
+	return sorted(vars_set, key=lambda v: v.name)
 
 
 class Soft:
@@ -30,24 +30,29 @@ class LogicSolver:
 	"""
 	Naïve back-tracking finite-domain solver (good enough for demos).
 	"""
-	
-	def __init__(self, trace: bool = False):
+
+	def __init__(self, trace: bool = False, objective_mode: str = "lex"):
 		self.vars: List[Var] = []
 		self.hard: List[Tuple[str, BoolExpr]] = []
 		self.soft: List[Soft] = []
-		self.objectives: List[Tuple[Expr, int]] = []  # sense: +1=max, -1=min
+		# objective tuple: (expression, sense, weight)
+		self.objectives: List[Tuple[Expr, int, float]] = []
 		self.trace = trace
-		
-		self._best_score: Tuple[int, List[float]] | None = None
+		self.objective_mode = objective_mode
+
+		if objective_mode not in {"lex", "sum"}:
+			raise ValueError("objective_mode must be 'lex' or 'sum'")
+
+		self._best_score: Tuple[int, float | List[float]] | None = None
 		self._best_assignment: Dict[str, Any] | None = None
 
 	def _ensure_vars(self, expr: Expr | BoolExpr) -> None:
 		"""Collect variables from an expression and register them."""
 		for v in collect_vars(expr):
-		        if v.domain is None:
-		                raise ValueError(f"{v.name} missing domain")
-		        if v.name not in {x.name for x in self.vars}:
-		                self.vars.append(v)
+			if v.domain is None:
+				raise ValueError(f"{v.name} missing domain")
+			if v.name not in {x.name for x in self.vars}:
+				self.vars.append(v)
 	
 	# ───────────────────────────── API
 	def add_variables(self, vs: List[Var]) -> None:
@@ -65,26 +70,40 @@ class LogicSolver:
 		self._ensure_vars(bexp)
 		self.soft.append(Soft(bexp, penalty, name))
 	
-	def maximize(self, expr: Expr) -> None:
+	def maximize(self, expr: Expr, weight: float = 1.0) -> None:
+		"""Add an objective to maximize ``expr`` with optional ``weight``."""
 		self._ensure_vars(expr)
-		self.objectives.append((expr, 1))
-	
-	def minimize(self, expr: Expr) -> None:
+		self.objectives.append((expr, 1, float(weight)))
+
+	def minimize(self, expr: Expr, weight: float = 1.0) -> None:
+		"""Add an objective to minimize ``expr`` with optional ``weight``."""
 		self._ensure_vars(expr)
-		self.objectives.append((expr, -1))
+		self.objectives.append((expr, -1, float(weight)))
 	
 	# ───────────────────────────── solving internals
-	def _score(self, a: Dict[str, Any]) -> Tuple[int, List[float]]:
+	def _score(self, a: Dict[str, Any]) -> Tuple[int, float | List[float]]:
+		"""Return (penalty, objective score)."""
 		penalty = sum(s.cost(a) for s in self.soft)
-		obj_vec = [sense * expr.eval(a) for expr, sense in self.objectives]
+		if self.objective_mode == "sum":
+			score = sum(
+				weight * sense * expr.eval(a)
+				for expr, sense, weight in self.objectives
+			)
+			return penalty, score
+
+		obj_vec = [sense * expr.eval(a) for expr, sense, _ in self.objectives]
 		return penalty, obj_vec
 	
 	def _better(self, new, best) -> bool:
 		if best is None:
 			return True
 		if new[0] != best[0]:
-			return new[0] < best[0]  # lower penalty
-		return new[1] > best[1]  # lexicographic objectives
+			return new[0] < best[0]	 # lower penalty
+
+		if self.objective_mode == "sum":
+			return new[1] > best[1]
+
+		return new[1] > best[1]	 # lexicographic objectives
 	
 	def _consistent(self, partial: Dict[str, Any]) -> bool:
 		for _, rule in self.hard:
@@ -97,60 +116,68 @@ class LogicSolver:
 		return True
 	
 	def _bt(
-	        self,
-	        idx: int,
-	        assignment: Dict[str, Any],
-	        solutions: List[Dict[str, Any]] | None = None,
-	        limit: int | None = None,
+		self,
+		idx: int,
+		assignment: Dict[str, Any],
+		solutions: List[Dict[str, Any]] | None = None,
+		limit: int | None = None,
 	) -> None:
-	        if solutions is not None and limit is not None and len(solutions) >= limit:
-	                return
+		if solutions is not None and limit is not None and len(solutions) >= limit:
+			return
 
-	        if idx == len(self.vars):
-	                if solutions is not None:
-	                        penalty, obj_vec = self._score(assignment)
-	                        solutions.append({
-	                                "assignment": assignment.copy(),
-	                                "penalty": penalty,
-	                                "objectives": obj_vec,
-	                        })
-	                        return
+		if idx == len(self.vars):
+			if solutions is not None:
+				penalty, obj_val = self._score(assignment)
+				entry = {
+					"assignment": assignment.copy(),
+					"penalty": penalty,
+				}
+				if self.objective_mode == "sum":
+					entry["objective"] = obj_val
+				else:
+					entry["objectives"] = obj_val
+				solutions.append(entry)
+				return
 
-	                score = self._score(assignment)
-	                if self._better(score, self._best_score):
-	                        self._best_score = score
-	                        self._best_assignment = assignment.copy()
-	                        if self.trace:
-	                                print("NEW BEST", score, self._best_assignment)
-	                return
+			score = self._score(assignment)
+			if self._better(score, self._best_score):
+				self._best_score = score
+				self._best_assignment = assignment.copy()
+				if self.trace:
+					print("NEW BEST", score, self._best_assignment)
+			return
 		
-	        v = self.vars[idx]
-	        for val in v.domain:
-	                assignment[v.name] = val
-	                if self._consistent(assignment):
-	                        self._bt(idx + 1, assignment, solutions, limit)
-	                        if solutions is not None and limit is not None and len(solutions) >= limit:
-	                                assignment.pop(v.name, None)
-	                                return
-	        assignment.pop(v.name, None)
+		v = self.vars[idx]
+		for val in v.domain:
+			assignment[v.name] = val
+			if self._consistent(assignment):
+				self._bt(idx + 1, assignment, solutions, limit)
+				if solutions is not None and limit is not None and len(solutions) >= limit:
+					assignment.pop(v.name, None)
+					return
+		assignment.pop(v.name, None)
 	
 	def solve(self) -> Dict[str, Any]:
-	        self._best_score, self._best_assignment = None, None
-	        self._bt(0, {})
-	        if self._best_assignment is None:
-	                raise RuntimeError("No feasible solution")
-	        penalty, obj_vec = self._best_score
-	        return {
-	                "assignment": self._best_assignment,
-	                "penalty": penalty,
-	                "objectives": obj_vec,
-	        }
+		self._best_score, self._best_assignment = None, None
+		self._bt(0, {})
+		if self._best_assignment is None:
+			raise RuntimeError("No feasible solution")
+		penalty, obj_val = self._best_score
+		result = {
+			"assignment": self._best_assignment,
+			"penalty": penalty,
+		}
+		if self.objective_mode == "sum":
+			result["objective"] = obj_val
+		else:
+			result["objectives"] = obj_val
+		return result
 
 	def all_solutions(self, limit: int | None = None) -> List[Dict[str, Any]]:
-	        """Return all feasible assignments up to ``limit`` solutions."""
-	        solutions: List[Dict[str, Any]] = []
-	        self._bt(0, {}, solutions, limit)
-	        return solutions
+		"""Return all feasible assignments up to ``limit`` solutions."""
+		solutions: List[Dict[str, Any]] = []
+		self._bt(0, {}, solutions, limit)
+		return solutions
 	
 	# ───────────────────────────── convenience
 	@staticmethod
@@ -159,9 +186,12 @@ class LogicSolver:
 	
 	def pretty(self, sol: Dict[str, Any]) -> str:
 		rows = [self._pretty_dict(sol["assignment"])]
-		rows.append(f"  penalty : {sol['penalty']}")
+		rows.append(f"	penalty : {sol['penalty']}")
 		if self.objectives:
-			rows.append(f" objectives : {tuple(sol['objectives'])}")
+			if self.objective_mode == "sum":
+				rows.append(f"	objective : {sol['objective']}")
+			else:
+				rows.append(f" objectives : {tuple(sol['objectives'])}")
 		return "\n".join(rows)
 
 
