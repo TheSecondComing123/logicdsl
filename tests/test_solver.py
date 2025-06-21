@@ -70,13 +70,47 @@ def test_distinct_constraint_in_solver():
 
 
 def test_unsat_raises():
-	"""
-	Impossible constraint should raise RuntimeError.
-	"""
-	x = Var("x") << {1}
-	y = Var("y") << {2}
-	S = LogicSolver()
-	S.require(x + y == 100, "impossible")
-	
-	with pytest.raises(RuntimeError):
-		S.solve()
+        """
+        Impossible constraint should raise RuntimeError.
+        """
+        x = Var("x") << {1}
+        y = Var("y") << {2}
+        S = LogicSolver()
+        S.require(x + y == 100, "impossible")
+
+        with pytest.raises(RuntimeError):
+                S.solve()
+
+
+def test_all_solutions_limit():
+        """Enumerate first two solutions to x + y == 4 with x,y in [1..3]."""
+        x = Var("x") << (1, 3)
+        y = Var("y") << (1, 3)
+
+        S = LogicSolver()
+        S.require(x + y == 4)
+
+        sols = S.all_solutions(limit=2)
+        assert len(sols) == 2
+        assert sols[0]["assignment"] == {"x": 1, "y": 3}
+        assert sols[1]["assignment"] == {"x": 2, "y": 2}
+
+
+def test_all_solutions_penalty_and_objective():
+        """Return solutions with penalties and objective values included."""
+        x = Var("x") << {0, 1}
+
+        S = LogicSolver()
+        S.prefer(x == 1, penalty=5)
+        S.maximize(x)
+
+        sols = S.all_solutions()
+        assert len(sols) == 2
+        # first assignment should be x=0 (penalty 5)
+        assert sols[0]["assignment"]["x"] == 0
+        assert sols[0]["penalty"] == 5
+        assert sols[0]["objectives"][0] == 0
+        # second assignment should be x=1 (penalty 0)
+        assert sols[1]["assignment"]["x"] == 1
+        assert sols[1]["penalty"] == 0
+        assert sols[1]["objectives"][0] == 1
