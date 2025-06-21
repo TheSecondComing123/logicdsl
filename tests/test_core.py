@@ -5,7 +5,17 @@ Run with:
     pytest -q
 """
 
-from logicdsl import (BoolVar, Var, at_most_one, distinct, exactly_one, exists, forall)
+from logicdsl import (
+        BoolVar,
+        Var,
+        at_most_one,
+        distinct,
+        exactly_one,
+        exists,
+        forall,
+        sum_of,
+        product_of,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -87,6 +97,17 @@ def test_quantifiers():
 
 
 def test_boolexpr_named():
-	expr = (Var("x") << (1, 2)) == 1
-	named = expr.named("Xeq1")
-	assert named.name == "Xeq1"
+        expr = (Var("x") << (1, 2)) == 1
+        named = expr.named("Xeq1")
+        assert named.name == "Xeq1"
+
+
+def test_sum_and_product_of():
+        xs = [Var(f"x{i}") << (1, 3) for i in range(3)]
+        assignment = assgn(x0=1, x1=2, x2=3)
+
+        s = sum_of(xs)
+        p = product_of(xs)
+
+        assert s.eval(assignment) == 6
+        assert p.eval(assignment) == 6

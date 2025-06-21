@@ -4,7 +4,7 @@ Integration tests for logicdsl.solver.
 
 import pytest
 
-from logicdsl import LogicSolver, Var, distinct
+from logicdsl import LogicSolver, Var, distinct, sum_of, product_of
 
 
 def test_basic_optimal_solution():
@@ -17,8 +17,8 @@ def test_basic_optimal_solution():
 	y = Var("y") << {2, 4, 6, 8}
 	
 	S = LogicSolver()
-	S.require(x + y == 10, "sum10")
-	S.maximize(x * y)
+	S.require(sum_of([x, y]) == 10, "sum10")
+	S.maximize(product_of([x, y]))
 	
 	sol = S.solve()
 	best = sol["assignment"]
@@ -59,8 +59,8 @@ def test_distinct_constraint_in_solver():
 	
 	S = LogicSolver()
 	S.require(distinct([a, b, c]), "all_diff")
-	S.maximize(a + b + c)
-	
+	S.maximize(sum_of([a, b, c]))
+		
 	sol = S.solve()
 	values = list(sol["assignment"].values())
 	assert sorted(values) == [1, 2, 3]
@@ -70,47 +70,47 @@ def test_distinct_constraint_in_solver():
 
 
 def test_unsat_raises():
-        """
-        Impossible constraint should raise RuntimeError.
-        """
-        x = Var("x") << {1}
-        y = Var("y") << {2}
-        S = LogicSolver()
-        S.require(x + y == 100, "impossible")
+	"""
+	Impossible constraint should raise RuntimeError.
+	"""
+	x = Var("x") << {1}
+	y = Var("y") << {2}
+	S = LogicSolver()
+	S.require(sum_of([x, y]) == 100, "impossible")
 
-        with pytest.raises(RuntimeError):
-                S.solve()
+	with pytest.raises(RuntimeError):
+		S.solve()
 
 
 def test_all_solutions_limit():
-        """Enumerate first two solutions to x + y == 4 with x,y in [1..3]."""
-        x = Var("x") << (1, 3)
-        y = Var("y") << (1, 3)
+	"""Enumerate first two solutions to x + y == 4 with x,y in [1..3]."""
+	x = Var("x") << (1, 3)
+	y = Var("y") << (1, 3)
 
-        S = LogicSolver()
-        S.require(x + y == 4)
+	S = LogicSolver()
+	S.require(sum_of([x, y]) == 4)
 
-        sols = S.all_solutions(limit=2)
-        assert len(sols) == 2
-        assert sols[0]["assignment"] == {"x": 1, "y": 3}
-        assert sols[1]["assignment"] == {"x": 2, "y": 2}
+	sols = S.all_solutions(limit=2)
+	assert len(sols) == 2
+	assert sols[0]["assignment"] == {"x": 1, "y": 3}
+	assert sols[1]["assignment"] == {"x": 2, "y": 2}
 
 
 def test_all_solutions_penalty_and_objective():
-        """Return solutions with penalties and objective values included."""
-        x = Var("x") << {0, 1}
+	"""Return solutions with penalties and objective values included."""
+	x = Var("x") << {0, 1}
 
-        S = LogicSolver()
-        S.prefer(x == 1, penalty=5)
-        S.maximize(x)
+	S = LogicSolver()
+	S.prefer(x == 1, penalty=5)
+	S.maximize(x)
 
-        sols = S.all_solutions()
-        assert len(sols) == 2
-        # first assignment should be x=0 (penalty 5)
-        assert sols[0]["assignment"]["x"] == 0
-        assert sols[0]["penalty"] == 5
-        assert sols[0]["objectives"][0] == 0
-        # second assignment should be x=1 (penalty 0)
-        assert sols[1]["assignment"]["x"] == 1
-        assert sols[1]["penalty"] == 0
-        assert sols[1]["objectives"][0] == 1
+	sols = S.all_solutions()
+	assert len(sols) == 2
+	# first assignment should be x=0 (penalty 5)
+	assert sols[0]["assignment"]["x"] == 0
+	assert sols[0]["penalty"] == 5
+	assert sols[0]["objectives"][0] == 0
+	# second assignment should be x=1 (penalty 0)
+	assert sols[1]["assignment"]["x"] == 1
+	assert sols[1]["penalty"] == 0
+	assert sols[1]["objectives"][0] == 1
