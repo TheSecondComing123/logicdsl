@@ -6,7 +6,7 @@ z = Var("z").in_range(0, 5)
 a, b, c = [Var(v) << (1, 3) for v in "abc"]
 
 S = LogicSolver()
-S.add_variables([x, y, z, a, b, c])
+# variables used in constraints are added automatically
 
 S.require(x + y == 10)
 S.require((x != y) & (y < 9))

@@ -203,7 +203,7 @@ if __name__ == "__main__":
 	y = Var("y") << {2, 4, 6, 8}
 	
 	solver = LogicSolver(trace=True)
-	solver.add_variables([x, y])
+	# variables used in constraints are added automatically
 	solver.require(x + y == 10, "sum10")
 	solver.maximize(x * y)
 	

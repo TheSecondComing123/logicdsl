@@ -20,7 +20,8 @@ x = Var("x") << (1, 9)
 y = Var("y") << {2, 4, 6, 8}
 
 solver = LogicSolver()
-solver.add_variables([x, y])
+
+# variables used in constraints are added automatically
 
 # hard constraint and optimization objective
 solver.require(x + y == 10)
@@ -31,6 +32,8 @@ print(solver.pretty(solution))
 ```
 
 Running the above prints the best assignment of `x` and `y` that sums to 10 while maximizing their product.
+
+Variables do not need to be registered explicitly; the solver automatically discovers all variables that appear in constraints or objectives.
 
 ### Objective Modes
 
