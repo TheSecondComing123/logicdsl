@@ -1,9 +1,14 @@
 # logicdsl/solver.py
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Set
 
-from .core import BoolExpr, Expr
+from .core import BoolExpr, Expr, Var
+
+
+def collect_vars(expr: Expr | BoolExpr) -> Set[Var]:
+	"""Return the set of Vars referenced in an expression tree."""
+	return set(getattr(expr, "_vars", set()))
 
 
 class Soft:
@@ -34,6 +39,14 @@ class LogicSolver:
 		
 		self._best_score: Tuple[int, List[float]] | None = None
 		self._best_assignment: Dict[str, Any] | None = None
+
+	def _ensure_vars(self, expr: Expr | BoolExpr) -> None:
+		"""Collect variables from an expression and register them."""
+		for v in collect_vars(expr):
+		        if v.domain is None:
+		                raise ValueError(f"{v.name} missing domain")
+		        if v.name not in {x.name for x in self.vars}:
+		                self.vars.append(v)
 	
 	# ───────────────────────────── API
 	def add_variables(self, vs: List[Var]) -> None:
@@ -44,15 +57,19 @@ class LogicSolver:
 				self.vars.append(v)
 	
 	def require(self, bexp: BoolExpr, name: str | None = None) -> None:
+		self._ensure_vars(bexp)
 		self.hard.append((name or bexp.name, bexp))
 	
 	def prefer(self, bexp: BoolExpr, penalty: int = 1, name: str | None = None) -> None:
+		self._ensure_vars(bexp)
 		self.soft.append(Soft(bexp, penalty, name))
 	
 	def maximize(self, expr: Expr) -> None:
+		self._ensure_vars(expr)
 		self.objectives.append((expr, 1))
 	
 	def minimize(self, expr: Expr) -> None:
+		self._ensure_vars(expr)
 		self.objectives.append((expr, -1))
 	
 	# ───────────────────────────── solving internals

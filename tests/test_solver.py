@@ -17,7 +17,6 @@ def test_basic_optimal_solution():
 	y = Var("y") << {2, 4, 6, 8}
 	
 	S = LogicSolver()
-	S.add_variables([x, y])
 	S.require(x + y == 10, "sum10")
 	S.maximize(x * y)
 	
@@ -37,7 +36,6 @@ def test_soft_penalty_and_objective():
 	z = Var("z") << {0, 1}
 	
 	S = LogicSolver()
-	S.add_variables([x, z])
 	# hard: x even
 	S.require(x % 2 == 0, "x_even")
 	# soft: prefer z == 0
@@ -60,7 +58,6 @@ def test_distinct_constraint_in_solver():
 	a, b, c = [Var(v) << (1, 3) for v in "abc"]
 	
 	S = LogicSolver()
-	S.add_variables([a, b, c])
 	S.require(distinct([a, b, c]), "all_diff")
 	S.maximize(a + b + c)
 	
@@ -79,7 +76,6 @@ def test_unsat_raises():
 	x = Var("x") << {1}
 	y = Var("y") << {2}
 	S = LogicSolver()
-	S.add_variables([x, y])
 	S.require(x + y == 100, "impossible")
 	
 	with pytest.raises(RuntimeError):

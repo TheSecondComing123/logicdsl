@@ -1,7 +1,7 @@
 # logicdsl/core.py
 from __future__ import annotations
 
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Set
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -10,8 +10,9 @@ class Expr:
 	Arithmetic expression node built from Vars / literals.
 	"""
 	
-	def __init__(self, fn: Callable[[Dict[str, Any]], float]):
+	def __init__(self, fn: Callable[[Dict[str, Any]], float], vars: Set["Var"] | None = None):
 		self._f = fn  # fn : assignment → number
+		self._vars: Set[Var] = set(vars or [])
 	
 	# --------------------------------------------------------------------- eval
 	def eval(self, a: Dict[str, Any]) -> float:
@@ -21,17 +22,17 @@ class Expr:
 	@staticmethod
 	def _E(v: Any) -> "Expr":  # coerce Var/int/float → Expr
 		if isinstance(v, Expr):
-			return v
+		        return v
 		if isinstance(v, Var):
-			return v.expr
+		        return v.expr
 		if isinstance(v, (int, float)):
-			return Expr(lambda a, val=v: val)
+		        return Expr(lambda a, val=v: val, vars=set())
 		raise TypeError(f"Unsupported operand type: {type(v)}")
 	
 	@staticmethod
 	def _bin(pair: tuple["Expr", "Expr"], op):
 		l, r = pair
-		return Expr(lambda a, _l=l, _r=r: op(_l.eval(a), _r.eval(a)))
+		return Expr(lambda a, _l=l, _r=r: op(_l.eval(a), _r.eval(a)), vars=l._vars | r._vars)
 	
 	# ------------------------------------------------------------ arithmetic ops
 	def __add__(self, o):
@@ -67,15 +68,15 @@ class Expr:
 		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x ** y)
 	
 	def __neg__(self):
-		return Expr(lambda a, s=self: -s.eval(a))
-	
+		return Expr(lambda a, s=self: -s.eval(a), vars=self._vars)
+
 	def abs(self):
-		return Expr(lambda a, s=self: abs(s.eval(a)))
+		return Expr(lambda a, s=self: abs(s.eval(a)), vars=self._vars)
 	
 	# ------------------------------------------------------- comparisons → BoolE
 	def _cmp(self, o, op):
 		o = Expr._E(o)
-		return BoolExpr(lambda a, s=self: op(s.eval(a), o.eval(a)))
+		return BoolExpr(lambda a, s=self: op(s.eval(a), o.eval(a)), vars=self._vars | o._vars)
 	
 	def __eq__(self, o):
 		return self._cmp(o, lambda x, y: x == y)
@@ -102,9 +103,10 @@ class BoolExpr:
 	Boolean expression node (built from comparisons or logic ops).
 	"""
 	
-	def __init__(self, fn: Callable[[Dict[str, Any]], bool], name: str | None = None):
+	def __init__(self, fn: Callable[[Dict[str, Any]], bool], name: str | None = None, vars: Set["Var"] | None = None):
 		self._f = fn
 		self.name = name or "<anon>"
+		self._vars: Set[Var] = set(vars or [])
 	
 	def satisfied(self, a: Dict[str, Any]) -> bool:
 		return self._f(a)
@@ -122,31 +124,31 @@ class BoolExpr:
 	# --------------------------------------------------------- logic operators
 	def __and__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) and t.satisfied(a))
+		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) and t.satisfied(a), vars=self._vars | o._vars)
 	
 	__rand__ = __and__
 	
 	def __or__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) or t.satisfied(a))
+		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) or t.satisfied(a), vars=self._vars | o._vars)
 	
 	__ror__ = __or__
 	
 	def __invert__(self):
-		return BoolExpr(lambda a, s=self: not s.satisfied(a))
+		return BoolExpr(lambda a, s=self: not s.satisfied(a), vars=self._vars)
 	
 	def __xor__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) ^ t.satisfied(a))
+		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) ^ t.satisfied(a), vars=self._vars | o._vars)
 	
 	# implication  (self >> o)
 	def __rshift__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: (not s.satisfied(a)) or t.satisfied(a))
+		return BoolExpr(lambda a, s=self, t=o: (not s.satisfied(a)) or t.satisfied(a), vars=self._vars | o._vars)
 
 	def named(self, name: str) -> "BoolExpr":
 		"""Return a copy of this BoolExpr with a different name."""
-		return BoolExpr(self._f, name)
+		return BoolExpr(self._f, name, vars=self._vars)
 
 	def __repr__(self) -> str:
 		return f"BoolExpr({self.name})"
@@ -161,7 +163,10 @@ class Var:
 	def __init__(self, name: str):
 		self.name = name
 		self.domain = None
-		self.expr = Expr(lambda a, n=name: a[n])
+		self.expr = Expr(lambda a, n=name: a[n], vars={self})
+
+	def __hash__(self) -> int:
+		return hash(self.name)
 	
 	# ------------------------------------------------------- domain assignment
 	def __lshift__(self, spec):
