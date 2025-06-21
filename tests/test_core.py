@@ -96,6 +96,13 @@ def test_quantifiers():
 	assert not exists(xs, lambda v: v == 4).satisfied(assgn(x0=1, x1=2, x2=3))
 
 
+def test_quantifier_objects():
+	xs = [Var(f"x{i}") << (1, 3) for i in range(3)]
+	assert (forall(xs) >> (lambda v: v <= 3)).satisfied(assgn(x0=1, x1=2, x2=3))
+	assert (exists(xs).require(lambda v: v == 2)).satisfied(assgn(x0=1, x1=2, x2=3))
+	assert not (exists(xs) >> (lambda v: v == 4)).satisfied(assgn(x0=1, x1=2, x2=3))
+
+
 def test_boolexpr_named():
         expr = (Var("x") << (1, 2)) == 1
         named = expr.named("Xeq1")

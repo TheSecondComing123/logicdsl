@@ -48,3 +48,21 @@ solver.maximize(x, weight=1)
 solver.maximize(y, weight=2)
 ```
 
+### Quantifiers
+
+`forall` and `exists` still accept a list of variables and a lambda
+function as before.  When called with only the variable list they now
+return quantifier objects that accept a predicate using `>>` or
+`.require()`.
+
+```python
+xs = [Var(f"x{i}") << (1, 3) for i in range(3)]
+
+# traditional
+forall(xs, lambda v: v <= 3)
+
+# new style
+forall(xs) >> (lambda v: v <= 3)
+exists(xs).require(lambda v: v == 2)
+```
+
