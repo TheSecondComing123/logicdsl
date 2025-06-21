@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Iterable, List
 
-from .core import BoolExpr, Var
+from .core import BoolExpr, Expr, Var
 
 
 # ───────────────────────────── utilities
@@ -62,4 +62,35 @@ def forall(vs: Iterable[Var], f) -> BoolExpr:
 
 
 def exists(vs: Iterable[Var], f) -> BoolExpr:
-	return _fold_or([f(v) for v in vs])
+        return _fold_or([f(v) for v in vs])
+
+
+# ───────────────────────────── arithmetic helpers
+def sum_of(xs: Iterable[Expr | Var]) -> Expr:
+        """Return an expression representing the sum of ``xs``.
+
+        The empty sum evaluates to 0.
+        """
+        xs = list(xs)
+        if not xs:
+                return Expr(lambda a: 0)
+
+        total = Expr._E(xs[0])
+        for x in xs[1:]:
+                total = total + Expr._E(x)
+        return total
+
+
+def product_of(xs: Iterable[Expr | Var]) -> Expr:
+        """Return an expression representing the product of ``xs``.
+
+        The empty product evaluates to 1.
+        """
+        xs = list(xs)
+        if not xs:
+                return Expr(lambda a: 1)
+
+        prod = Expr._E(xs[0])
+        for x in xs[1:]:
+                prod = prod * Expr._E(x)
+        return prod

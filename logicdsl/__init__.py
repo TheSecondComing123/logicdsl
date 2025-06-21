@@ -3,7 +3,16 @@
 Public surface of the LogicDSL package.
 """
 
-from .constraints import (at_least_one, at_most_one, distinct, exactly_one, exists, forall)
+from .constraints import (
+        at_least_one,
+        at_most_one,
+        distinct,
+        exactly_one,
+        exists,
+        forall,
+        sum_of,
+        product_of,
+)
 from .core import BoolExpr, BoolVar, Expr, Var
 
 
@@ -23,10 +32,12 @@ __all__ = [
 	"distinct",
 	"at_least_one",
 	"at_most_one",
-	"exactly_one",
-	"forall",
-	"exists",
-	# solver
-	"LogicSolver",
-	"Soft",
+        "exactly_one",
+        "forall",
+        "exists",
+        "sum_of",
+        "product_of",
+        # solver
+        "LogicSolver",
+        "Soft",
 ]
