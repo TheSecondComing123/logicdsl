@@ -53,8 +53,38 @@ def at_most_one(xs: List[BoolExpr | Var]) -> BoolExpr:
 
 
 def exactly_one(xs: List[BoolExpr | Var]) -> BoolExpr:
-	xs_b = [_to_bool(x) for x in xs]
-	return at_least_one(xs_b) & at_most_one(xs_b)
+        xs_b = [_to_bool(x) for x in xs]
+        return at_least_one(xs_b) & at_most_one(xs_b)
+
+
+def at_least_k(xs: List[BoolExpr | Var], k: int) -> BoolExpr:
+        """Return a BoolExpr satisfied when at least ``k`` of ``xs`` are true."""
+        xs_b = [_to_bool(x) for x in xs]
+
+        if k <= 0:
+                return _fold_and([])
+        if k > len(xs_b):
+                return _fold_or([])
+
+        from itertools import combinations
+
+        clauses = [_fold_and(list(combo)) for combo in combinations(xs_b, k)]
+        return _fold_or(clauses)
+
+
+def exactly_k(xs: List[BoolExpr | Var], k: int) -> BoolExpr:
+        """Return a BoolExpr satisfied when exactly ``k`` of ``xs`` are true."""
+        xs_b = [_to_bool(x) for x in xs]
+        n = len(xs_b)
+
+        if k < 0 or k > n:
+                return _fold_or([])
+        if k == 0:
+                return _fold_and([~x for x in xs_b])
+        if k == n:
+                return _fold_and(xs_b)
+
+        return at_least_k(xs_b, k) & at_least_k([~x for x in xs_b], n - k)
 
 
 def forall(vs: Iterable[Var], f) -> BoolExpr:
