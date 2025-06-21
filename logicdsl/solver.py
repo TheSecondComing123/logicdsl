@@ -6,9 +6,10 @@ from typing import Any, Dict, List, Tuple, Set
 from .core import BoolExpr, Expr, Var
 
 
-def collect_vars(expr: Expr | BoolExpr) -> Set[Var]:
-	"""Return the set of Vars referenced in an expression tree."""
-	return set(getattr(expr, "_vars", set()))
+def collect_vars(expr: Expr | BoolExpr) -> List[Var]:
+        """Return vars referenced in an expression tree in deterministic order."""
+        vars_set: Set[Var] = set(getattr(expr, "_vars", set()))
+        return sorted(vars_set, key=lambda v: v.name)
 
 
 class Soft:
@@ -95,34 +96,61 @@ class LogicSolver:
 				return False
 		return True
 	
-	def _bt(self, idx: int, assignment: Dict[str, Any]) -> None:
-		if idx == len(self.vars):
-			score = self._score(assignment)
-			if self._better(score, self._best_score):
-				self._best_score = score
-				self._best_assignment = assignment.copy()
-				if self.trace:
-					print("NEW BEST", score, self._best_assignment)
-			return
+	def _bt(
+	        self,
+	        idx: int,
+	        assignment: Dict[str, Any],
+	        solutions: List[Dict[str, Any]] | None = None,
+	        limit: int | None = None,
+	) -> None:
+	        if solutions is not None and limit is not None and len(solutions) >= limit:
+	                return
+
+	        if idx == len(self.vars):
+	                if solutions is not None:
+	                        penalty, obj_vec = self._score(assignment)
+	                        solutions.append({
+	                                "assignment": assignment.copy(),
+	                                "penalty": penalty,
+	                                "objectives": obj_vec,
+	                        })
+	                        return
+
+	                score = self._score(assignment)
+	                if self._better(score, self._best_score):
+	                        self._best_score = score
+	                        self._best_assignment = assignment.copy()
+	                        if self.trace:
+	                                print("NEW BEST", score, self._best_assignment)
+	                return
 		
-		v = self.vars[idx]
-		for val in v.domain:
-			assignment[v.name] = val
-			if self._consistent(assignment):
-				self._bt(idx + 1, assignment)
-		assignment.pop(v.name, None)
+	        v = self.vars[idx]
+	        for val in v.domain:
+	                assignment[v.name] = val
+	                if self._consistent(assignment):
+	                        self._bt(idx + 1, assignment, solutions, limit)
+	                        if solutions is not None and limit is not None and len(solutions) >= limit:
+	                                assignment.pop(v.name, None)
+	                                return
+	        assignment.pop(v.name, None)
 	
 	def solve(self) -> Dict[str, Any]:
-		self._best_score, self._best_assignment = None, None
-		self._bt(0, {})
-		if self._best_assignment is None:
-			raise RuntimeError("No feasible solution")
-		penalty, obj_vec = self._best_score
-		return {
-			"assignment": self._best_assignment,
-			"penalty": penalty,
-			"objectives": obj_vec,
-		}
+	        self._best_score, self._best_assignment = None, None
+	        self._bt(0, {})
+	        if self._best_assignment is None:
+	                raise RuntimeError("No feasible solution")
+	        penalty, obj_vec = self._best_score
+	        return {
+	                "assignment": self._best_assignment,
+	                "penalty": penalty,
+	                "objectives": obj_vec,
+	        }
+
+	def all_solutions(self, limit: int | None = None) -> List[Dict[str, Any]]:
+	        """Return all feasible assignments up to ``limit`` solutions."""
+	        solutions: List[Dict[str, Any]] = []
+	        self._bt(0, {}, solutions, limit)
+	        return solutions
 	
 	# ───────────────────────────── convenience
 	@staticmethod
