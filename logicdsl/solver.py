@@ -6,9 +6,10 @@ from typing import Any, Dict, List, Tuple, Set
 from .core import BoolExpr, Expr, Var
 
 
-def collect_vars(expr: Expr | BoolExpr) -> Set[Var]:
-	"""Return the set of Vars referenced in an expression tree."""
-	return set(getattr(expr, "_vars", set()))
+def collect_vars(expr: Expr | BoolExpr) -> List[Var]:
+        """Return vars referenced in an expression tree in deterministic order."""
+        vars_set: Set[Var] = set(getattr(expr, "_vars", set()))
+        return sorted(vars_set, key=lambda v: v.name)
 
 
 class Soft:
