@@ -84,3 +84,9 @@ def test_quantifiers():
 	# exists xs: x == 2
 	assert exists(xs, lambda v: v == 2).satisfied(assgn(x0=1, x1=2, x2=3))
 	assert not exists(xs, lambda v: v == 4).satisfied(assgn(x0=1, x1=2, x2=3))
+
+
+def test_boolexpr_named():
+	expr = (Var("x") << (1, 2)) == 1
+	named = expr.named("Xeq1")
+	assert named.name == "Xeq1"

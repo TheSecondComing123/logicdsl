@@ -143,7 +143,11 @@ class BoolExpr:
 	def __rshift__(self, o):
 		o = BoolExpr._B(o)
 		return BoolExpr(lambda a, s=self, t=o: (not s.satisfied(a)) or t.satisfied(a))
-	
+
+	def named(self, name: str) -> "BoolExpr":
+		"""Return a copy of this BoolExpr with a different name."""
+		return BoolExpr(self._f, name)
+
 	def __repr__(self) -> str:
 		return f"BoolExpr({self.name})"
 
