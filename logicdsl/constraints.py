@@ -87,12 +87,42 @@ def exactly_k(xs: List[BoolExpr | Var], k: int) -> BoolExpr:
         return at_least_k(xs_b, k) & at_least_k([~x for x in xs_b], n - k)
 
 
-def forall(vs: Iterable[Var], f) -> BoolExpr:
-	return _fold_and([f(v) for v in vs])
+class ForAll:
+        """Quantifier representing conjunction over a set of variables."""
+
+        def __init__(self, vs: Iterable[Var]):
+                self.vs = list(vs)
+
+        def require(self, f) -> BoolExpr:
+                return _fold_and([f(v) for v in self.vs])
+
+        def __rshift__(self, f) -> BoolExpr:
+                return self.require(f)
 
 
-def exists(vs: Iterable[Var], f) -> BoolExpr:
-        return _fold_or([f(v) for v in vs])
+class Exists:
+        """Quantifier representing disjunction over a set of variables."""
+
+        def __init__(self, vs: Iterable[Var]):
+                self.vs = list(vs)
+
+        def require(self, f) -> BoolExpr:
+                return _fold_or([f(v) for v in self.vs])
+
+        def __rshift__(self, f) -> BoolExpr:
+                return self.require(f)
+
+
+def forall(vs: Iterable[Var], f=None) -> BoolExpr | ForAll:
+        if f is None:
+                return ForAll(vs)
+        return ForAll(vs).require(f)
+
+
+def exists(vs: Iterable[Var], f=None) -> BoolExpr | Exists:
+        if f is None:
+                return Exists(vs)
+        return Exists(vs).require(f)
 
 
 # ───────────────────────────── arithmetic helpers
