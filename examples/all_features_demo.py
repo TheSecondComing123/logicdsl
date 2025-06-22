@@ -1,6 +1,6 @@
 from logicdsl import LogicSolver, Var, distinct
 
-x = Var("x") << (1, 9)
+x = Var("x").in_range(0.0, 1.0, step=0.1)
 y = Var("y") << {2, 4, 6, 8}
 z = Var("z").in_range(0, 5)
 a, b, c = [Var(v) << (1, 3) for v in "abc"]

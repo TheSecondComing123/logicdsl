@@ -3,7 +3,37 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Set
 
+def _make_domain(lo: float, hi: float, step: float | None) -> list:
+	"""Return a list representing the inclusive domain [lo, hi] using ``step``."""
+	if step is None:
+		step = 1.0 if isinstance(lo, float) or isinstance(hi, float) else 1
 
+	if step == 0:
+		raise ValueError("step must be non-zero")
+
+	if (
+		isinstance(lo, float)
+		or isinstance(hi, float)
+		or isinstance(step, float)
+	):
+		try:
+			import numpy as np  # type: ignore
+			arr = np.arange(lo, hi + step / 2, step)
+			return [float(x) for x in arr.tolist()]
+		except Exception:
+			dom: list = []
+			val = lo
+			if step > 0:
+				while val <= hi + 1e-9:
+					dom.append(round(val, 10))
+					val += step
+			else:
+				while val >= hi - 1e-9:
+					dom.append(round(val, 10))
+					val += step
+			return dom
+
+	return list(range(int(lo), int(hi) + 1, int(step)))
 # ─────────────────────────────────────────────────────────────────────────────
 class Expr:
 	"""
@@ -172,17 +202,18 @@ class Var:
 	
 	# ------------------------------------------------------- domain assignment
 	def __lshift__(self, spec):
-		if isinstance(spec, tuple) and len(spec) == 2:
-			lo, hi = spec
-			self.domain = list(range(lo, hi + 1))
+		if isinstance(spec, tuple) and len(spec) in {2, 3}:
+			lo, hi = spec[0], spec[1]
+			step = spec[2] if len(spec) == 3 else None
+			self.domain = _make_domain(lo, hi, step)
 		elif isinstance(spec, (list, set, range)):
 			self.domain = list(spec)
 		else:
 			raise ValueError(f"Bad domain for {self.name}")
 		return self
-	
-	def in_range(self, lo: int, hi: int):
-		self.domain = list(range(lo, hi + 1))
+
+	def in_range(self, lo: float, hi: float, step: float | None = None):
+		self.domain = _make_domain(lo, hi, step)
 		return self
 	
 	# ------------------------------------------------ delegate to Expr for math
