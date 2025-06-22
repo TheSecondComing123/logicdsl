@@ -49,6 +49,7 @@ class LogicSolver:
 
 		self._best_score: Tuple[int, float | List[float]] | None = None
 		self._best_assignment: Dict[str, Any] | None = None
+		self._failed_constraints: Set[str] = set()
 
 	def _ensure_vars(self, expr: Expr | BoolExpr) -> None:
 		"""Collect variables from an expression and register them."""
@@ -112,12 +113,13 @@ class LogicSolver:
 		return new[1] > best[1]	 # lexicographic objectives
 	
 	def _consistent(self, partial: Dict[str, Any]) -> bool:
-		for _, rule in self.hard:
+		for name, rule in self.hard:
 			try:
 				ok = rule.satisfied(partial)
 			except KeyError:  # unassigned vars
 				ok = True
 			if not ok:
+				self._failed_constraints.add(name)
 				return False
 		return True
 	
@@ -165,6 +167,7 @@ class LogicSolver:
 	
 	def solve(self) -> Dict[str, Any]:
 		self._best_score, self._best_assignment = None, None
+		self._failed_constraints = set()
 		self._bt(0, {})
 		if self._best_assignment is None:
 			raise RuntimeError("No feasible solution")
@@ -184,6 +187,10 @@ class LogicSolver:
 		solutions: List[Dict[str, Any]] = []
 		self._bt(0, {}, solutions, limit)
 		return solutions
+
+	def why_unsat(self) -> List[str]:
+		"""Return names of hard constraints that failed during the last search."""
+		return sorted(self._failed_constraints)
 	
 	# ───────────────────────────── convenience
 	@staticmethod
