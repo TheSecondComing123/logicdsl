@@ -36,10 +36,21 @@ def test_expr_arithmetic_and_eval():
 
 
 def test_var_neg_and_abs():
-	x = Var("x") << (-5, 5)
-	expr = (-x).abs()  # | -x |
-	assert expr.eval(assgn(x=-3)) == 3
-	assert expr.eval(assgn(x=4)) == 4
+        x = Var("x") << (-5, 5)
+        expr = (-x).abs()  # | -x |
+        assert expr.eval(assgn(x=-3)) == 3
+        assert expr.eval(assgn(x=4)) == 4
+
+
+def test_builtin_abs_matches_method():
+        x = Var("x") << (-5, 5)
+        y = Var("y") << (-5, 5)
+
+        built = abs(x - y)
+        method = (x - y).abs()
+
+        assert built.eval(assgn(x=2, y=-3)) == method.eval(assgn(x=2, y=-3))
+        assert built.eval(assgn(x=-1, y=4)) == method.eval(assgn(x=-1, y=4))
 
 
 def test_bool_comparisons():
