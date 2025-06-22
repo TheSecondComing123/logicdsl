@@ -69,6 +69,8 @@ class Expr:
 	
 	def __neg__(self):
 		return Expr(lambda a, s=self: -s.eval(a), vars=self._vars)
+	def __abs__(self):
+		return self.abs()
 
 	def abs(self):
 		return Expr(lambda a, s=self: abs(s.eval(a)), vars=self._vars)
@@ -224,6 +226,8 @@ class Var:
 	
 	def __neg__(self):
 		return -self.expr
+	def __abs__(self):
+		return abs(self.expr)
 	
 	# comparisons
 	def __eq__(self, o):
