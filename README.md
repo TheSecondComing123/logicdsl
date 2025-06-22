@@ -8,6 +8,7 @@ Install the project in editable mode so that you can run the examples directly:
 
 ```bash
 pip install -e .
+pip install z3-solver
 ```
 
 ## Quick Example
@@ -34,6 +35,21 @@ print(solver.pretty(solution))
 Running the above prints the best assignment of `x` and `y` that sums to 10 while maximizing their product.
 
 Variables do not need to be registered explicitly; the solver automatically discovers all variables that appear in constraints or objectives.
+
+### Z3 Solver
+
+Install `z3-solver` to use the optional backend powered by the Z3 theorem prover:
+
+```python
+from logicdsl import Z3Solver, Var
+
+x = Var("x") << {1, 2, 3}
+y = Var("y") << {1, 2, 3}
+
+solver = Z3Solver()
+solver.require(x + y == 4)
+print(solver.solve())
+```
 
 ### Objective Modes
 

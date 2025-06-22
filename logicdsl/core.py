@@ -156,18 +156,18 @@ class BoolExpr:
 	# --------------------------------------------------------- logic operators
 	def __and__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) and t.satisfied(a), vars=self._vars | o._vars)
+		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) & t.satisfied(a), vars=self._vars | o._vars)
 	
 	__rand__ = __and__
 	
 	def __or__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) or t.satisfied(a), vars=self._vars | o._vars)
+		return BoolExpr(lambda a, s=self, t=o: s.satisfied(a) | t.satisfied(a), vars=self._vars | o._vars)
 	
 	__ror__ = __or__
 	
 	def __invert__(self):
-		return BoolExpr(lambda a, s=self: not s.satisfied(a), vars=self._vars)
+                return BoolExpr(lambda a, s=self: (~s.satisfied(a)) if not isinstance(s.satisfied(a), bool) else (not s.satisfied(a)), vars=self._vars)
 	
 	def __xor__(self, o):
 		o = BoolExpr._B(o)
@@ -176,8 +176,7 @@ class BoolExpr:
 	# implication  (self >> o)
 	def __rshift__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: (not s.satisfied(a)) or t.satisfied(a), vars=self._vars | o._vars)
-
+		return BoolExpr(lambda a, s=self, t=o: (~s.satisfied(a)) if not isinstance(s.satisfied(a), bool) else (not s.satisfied(a)) | t.satisfied(a), vars=self._vars | o._vars)
 	def named(self, name: str) -> "BoolExpr":
 		"""Return a copy of this BoolExpr with a different name."""
 		return BoolExpr(self._f, name, vars=self._vars)

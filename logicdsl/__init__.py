@@ -43,6 +43,7 @@ def when(cond: BoolExpr | Var) -> _ImplicationBuilder:
         return _ImplicationBuilder(BoolExpr._B(cond))
 
 from .solver import LogicSolver, Soft
+from .z3solver import Z3Solver
 
 
 class _LetBuilder:
@@ -86,5 +87,6 @@ __all__ = [
         "product_of",
         # solver
         "LogicSolver",
+        "Z3Solver",
         "Soft",
 ]
