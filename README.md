@@ -87,3 +87,16 @@ q = BoolVar("q")
 rule = when(p).then(q)  # equivalent to p >> q
 ```
 
+### Let Helper
+
+`let(expr).then(lambda t: predicate)` simply passes a temporary expression to
+a lambda function.  This is handy when you want to name an intermediate result
+inside a constraint without creating a separate variable.
+
+```python
+x = Var("x") << (0, 5)
+y = Var("y") << (0, 5)
+
+constraint = let(x + y).then(lambda t: t < 7)
+```
+
