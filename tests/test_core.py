@@ -16,6 +16,7 @@ from logicdsl import (
         when,
         sum_of,
         product_of,
+	LogicSolver,
 )
 
 
@@ -141,3 +142,17 @@ def test_when_then():
         assert implication.satisfied(assgn(p=0, q=0))
         assert implication.satisfied(assgn(p=1, q=1))
         assert not implication.satisfied(assgn(p=1, q=0))
+
+
+
+def test_float_domain_generation():
+	x = Var("x").in_range(0.0, 0.3, step=0.1)
+	assert x.domain == [0.0, 0.1, 0.2, 0.3]
+
+
+def test_float_domain_solver():
+	x = Var("x").in_range(0.0, 1.0, step=0.5)
+	S = LogicSolver()
+	S.require(x >= 0.5)
+	sol = S.solve()
+	assert sol["assignment"]["x"] == 0.5

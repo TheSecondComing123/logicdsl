@@ -16,7 +16,7 @@ pip install -e .
 from logicdsl import LogicSolver, Var
 
 # define variables with finite domains
-x = Var("x") << (1, 9)
+x = Var("x").in_range(0.0, 1.0, step=0.1)
 y = Var("y") << {2, 4, 6, 8}
 
 solver = LogicSolver()
