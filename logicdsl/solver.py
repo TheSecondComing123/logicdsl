@@ -14,16 +14,20 @@ def collect_vars(expr: Expr | BoolExpr) -> List[Var]:
 
 class Soft:
 	"""
-	Wrapper for a soft constraint with a penalty.
+	Wrapper for a soft constraint with a penalty and optional weight.
 	"""
 	
-	def __init__(self, bexp: BoolExpr, penalty: int = 1, name: str | None = None):
+	def __init__(self, bexp: BoolExpr, penalty: int = 1, weight: float = 1.0, name: str | None = None):
 		self.bexp = bexp
 		self.penalty = penalty
+		self.weight = float(weight)
 		self.name = name or bexp.name
 	
 	def cost(self, a: Dict[str, Any]) -> int:
 		return 0 if self.bexp.satisfied(a) else self.penalty
+
+	def weighted_cost(self, a: Dict[str, Any]) -> float:
+		return 0.0 if self.bexp.satisfied(a) else self.penalty * self.weight
 
 
 class LogicSolver:
@@ -66,9 +70,9 @@ class LogicSolver:
 		self._ensure_vars(bexp)
 		self.hard.append((name or bexp.name, bexp))
 	
-	def prefer(self, bexp: BoolExpr, penalty: int = 1, name: str | None = None) -> None:
+	def prefer(self, bexp: BoolExpr, penalty: int = 1, weight: float = 1.0, name: str | None = None) -> None:
 		self._ensure_vars(bexp)
-		self.soft.append(Soft(bexp, penalty, name))
+		self.soft.append(Soft(bexp, penalty, weight, name))
 	
 	def maximize(self, expr: Expr, weight: float = 1.0) -> None:
 		"""Add an objective to maximize ``expr`` with optional ``weight``."""
@@ -85,15 +89,17 @@ class LogicSolver:
 		"""Return (penalty, objective score)."""
 		penalty = sum(s.cost(a) for s in self.soft)
 		if self.objective_mode == "sum":
-			score = sum(
-				weight * sense * expr.eval(a)
-				for expr, sense, weight in self.objectives
+			soft_cost = sum(s.weight * s.cost(a) for s in self.soft)
+			score = (
+				sum(
+					weight * sense * expr.eval(a)
+					for expr, sense, weight in self.objectives
+				) - soft_cost
 			)
 			return penalty, score
 
 		obj_vec = [sense * expr.eval(a) for expr, sense, _ in self.objectives]
 		return penalty, obj_vec
-	
 	def _better(self, new, best) -> bool:
 		if best is None:
 			return True

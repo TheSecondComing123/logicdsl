@@ -139,3 +139,19 @@ def test_objective_mode_sum():
 	sol_sum = S_sum.solve()
 	assert sol_sum["assignment"] == {"x": 0, "y": 1}
 	assert sol_sum["objective"] == 2
+
+
+	def test_soft_weights_with_sum_mode():
+	        """Weighted soft constraints influence tie-breaking when using sum mode."""
+	        x = Var("x") << {0, 1}
+	        y = Var("y") << {0, 1}
+	
+	        S = LogicSolver(objective_mode="sum")
+	        S.require(sum_of([x, y]) == 1)
+	        S.prefer(x == 1, penalty=1, weight=5.0)
+	        S.prefer(y == 1, penalty=1, weight=1.0)
+	
+	        sol = S.solve()
+	        assert sol["assignment"] == {"x": 1, "y": 0}
+	        assert sol["penalty"] == 1
+	        assert sol["objective"] == -1
