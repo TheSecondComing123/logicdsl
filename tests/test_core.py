@@ -14,6 +14,7 @@ from logicdsl import (
         exists,
         forall,
         when,
+        let,
         sum_of,
         product_of,
 	LogicSolver,
@@ -142,6 +143,16 @@ def test_when_then():
         assert implication.satisfied(assgn(p=0, q=0))
         assert implication.satisfied(assgn(p=1, q=1))
         assert not implication.satisfied(assgn(p=1, q=0))
+
+
+def test_let_then():
+        x = Var("x") << (0, 5)
+        y = Var("y") << (0, 5)
+
+        expr = let(x + y).then(lambda t: t < 10)
+
+        assert expr.satisfied(assgn(x=2, y=3))
+        assert not expr.satisfied(assgn(x=6, y=5))
 
 
 

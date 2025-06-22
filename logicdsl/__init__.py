@@ -44,6 +44,27 @@ def when(cond: BoolExpr | Var) -> _ImplicationBuilder:
 
 from .solver import LogicSolver, Soft
 
+
+class _LetBuilder:
+        """Helper returned by :func:`let` to pass a temporary expression."""
+
+        def __init__(self, expr: Expr | Var | int | float) -> None:
+                self._expr = Expr._E(expr)
+
+        def then(self, f):
+                """Apply ``f`` to the stored expression and return the result."""
+                return f(self._expr)
+
+
+def let(expr: Expr | Var | int | float) -> _LetBuilder:
+        """Convenience helper for applying a predicate to ``expr``.
+
+        ``let(x + y).then(lambda t: t < 10)`` is equivalent to
+        ``(lambda t: t < 10)(x + y)`` but can improve readability when
+        constructing larger expressions.
+        """
+        return _LetBuilder(expr)
+
 __all__ = [
 	"Var",
 	"BoolVar",
@@ -51,6 +72,7 @@ __all__ = [
         "BoolExpr",
         "named",
         "when",
+        "let",
         # constraints
 	"distinct",
         "at_least_one",
