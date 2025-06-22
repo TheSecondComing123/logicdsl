@@ -13,6 +13,7 @@ from logicdsl import (
         exactly_one,
         exists,
         forall,
+        when,
         sum_of,
         product_of,
 )
@@ -118,3 +119,14 @@ def test_sum_and_product_of():
 
         assert s.eval(assignment) == 6
         assert p.eval(assignment) == 6
+
+
+def test_when_then():
+        p = BoolVar("p")
+        q = BoolVar("q")
+
+        implication = when(p).then(q)
+
+        assert implication.satisfied(assgn(p=0, q=0))
+        assert implication.satisfied(assgn(p=1, q=1))
+        assert not implication.satisfied(assgn(p=1, q=0))

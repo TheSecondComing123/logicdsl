@@ -66,3 +66,15 @@ forall(xs) >> (lambda v: v <= 3)
 exists(xs).require(lambda v: v == 2)
 ```
 
+### When/Then Helper
+
+``when(cond).then(expr)`` builds an implication ``cond >> expr``.  This can make
+dynamic constructions a bit clearer.
+
+```python
+p = BoolVar("p")
+q = BoolVar("q")
+
+rule = when(p).then(q)  # equivalent to p >> q
+```
+
