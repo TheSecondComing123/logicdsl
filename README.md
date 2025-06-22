@@ -48,6 +48,15 @@ solver.maximize(x, weight=1)
 solver.maximize(y, weight=2)
 ```
 
+### Soft Constraints
+
+Use `prefer` to add a soft constraint with an optional penalty and weight. The
+weight influences the search when using `objective_mode="sum"`.
+
+```python
+solver.prefer(x > 5, penalty=1, weight=5.0)
+```
+
 ### Quantifiers
 
 `forall` and `exists` still accept a list of variables and a lambda
