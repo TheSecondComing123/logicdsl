@@ -133,7 +133,8 @@ class LogicSolver:
 		start: float | None = None,
 		timeout: float | None = None,
 	) -> None:
-		if start is not None and timeout is not None and time.monotonic() - start > timeout:
+		# treat a zero timeout as an immediate expiration
+		if start is not None and timeout is not None and time.monotonic() - start >= timeout:
 			raise TimeoutError()
 		if solutions is not None and limit is not None and len(solutions) >= limit:
 			return
