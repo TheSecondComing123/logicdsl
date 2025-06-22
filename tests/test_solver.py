@@ -141,7 +141,7 @@ def test_objective_mode_sum():
 	assert sol_sum["objective"] == 2
 
 
-	def test_soft_weights_with_sum_mode():
+def test_soft_weights_with_sum_mode():
 	        """Weighted soft constraints influence tie-breaking when using sum mode."""
 	        x = Var("x") << {0, 1}
 	        y = Var("y") << {0, 1}
@@ -155,3 +155,26 @@ def test_objective_mode_sum():
 	        assert sol["assignment"] == {"x": 1, "y": 0}
 	        assert sol["penalty"] == 1
 	        assert sol["objective"] == -1
+
+
+def test_solve_timeout():
+	"""Solver should raise TimeoutError when search exceeds the limit."""
+	x = Var("x") << (1, 9)
+	y = Var("y") << (1, 9)
+	
+	S = LogicSolver()
+	S.require(sum_of([x, y]) >= 0)
+	
+	with pytest.raises(TimeoutError):
+		S.solve(timeout=0.0)
+	
+
+def test_all_solutions_timeout_returns_partial():
+	"""all_solutions returns any found solutions when timing out."""
+	x = Var("x") << (0, 1)
+	
+	S = LogicSolver()
+	S.prefer(x == 1, penalty=1)
+	
+	sols = S.all_solutions(timeout=0.0)
+	assert sols == []

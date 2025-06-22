@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple, Set
+import time
 
 from .core import BoolExpr, Expr, Var
 
@@ -129,7 +130,11 @@ class LogicSolver:
 		assignment: Dict[str, Any],
 		solutions: List[Dict[str, Any]] | None = None,
 		limit: int | None = None,
+		start: float | None = None,
+		timeout: float | None = None,
 	) -> None:
+		if start is not None and timeout is not None and time.monotonic() - start > timeout:
+			raise TimeoutError()
 		if solutions is not None and limit is not None and len(solutions) >= limit:
 			return
 
@@ -159,16 +164,18 @@ class LogicSolver:
 		for val in v.domain:
 			assignment[v.name] = val
 			if self._consistent(assignment):
-				self._bt(idx + 1, assignment, solutions, limit)
+				self._bt(idx + 1, assignment, solutions, limit, start, timeout)
 				if solutions is not None and limit is not None and len(solutions) >= limit:
 					assignment.pop(v.name, None)
 					return
 		assignment.pop(v.name, None)
 	
-	def solve(self) -> Dict[str, Any]:
+	def solve(self, timeout: float | None = None) -> Dict[str, Any]:
+		"""Search for the best assignment within the optional timeout."""
 		self._best_score, self._best_assignment = None, None
 		self._failed_constraints = set()
-		self._bt(0, {})
+		start = time.monotonic()
+		self._bt(0, {}, None, None, start, timeout)
 		if self._best_assignment is None:
 			raise RuntimeError("No feasible solution")
 		penalty, obj_val = self._best_score
@@ -182,10 +189,14 @@ class LogicSolver:
 			result["objectives"] = obj_val
 		return result
 
-	def all_solutions(self, limit: int | None = None) -> List[Dict[str, Any]]:
-		"""Return all feasible assignments up to ``limit`` solutions."""
+	def all_solutions(self, limit: int | None = None, timeout: float | None = None) -> List[Dict[str, Any]]:
+		"""Return all feasible assignments up to ``limit`` or until the timeout expires."""
 		solutions: List[Dict[str, Any]] = []
-		self._bt(0, {}, solutions, limit)
+		start = time.monotonic()
+		try:
+			self._bt(0, {}, solutions, limit, start, timeout)
+		except TimeoutError:
+			pass
 		return solutions
 
 	def why_unsat(self) -> List[str]:
