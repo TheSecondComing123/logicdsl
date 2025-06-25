@@ -26,11 +26,11 @@ def _make_domain(lo: float, hi: float, step: float | None) -> list:
 			val = lo
 			if step > 0:
 				while val <= hi + 1e-9:
-					dom.append(round(val, 10))
+					dom.append(val)
 					val += step
 			else:
 				while val >= hi - 1e-9:
-					dom.append(round(val, 10))
+					dom.append(val)
 					val += step
 			return dom
 	
