@@ -6,7 +6,7 @@ authors = [{ name = "Alan Bagel", email = "jiuprogrammer@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-        "z3-solver",
+    "z3-solver",
 ]
 
 [build-system]

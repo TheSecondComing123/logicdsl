@@ -1,6 +1,8 @@
 # LogicDSL
 
-LogicDSL is a tiny domain-specific language for solving finite-domain logic problems in Python. It lets you declare integer variables, compose arithmetic and logical expressions, and search for assignments that satisfy a set of constraints.
+LogicDSL is a tiny domain-specific language for solving finite-domain logic problems in Python. It lets you declare
+integer variables, compose arithmetic and logical expressions, and search for assignments that satisfy a set of
+constraints.
 
 ## Installation
 
@@ -34,7 +36,8 @@ print(solver.pretty(solution))
 
 Running the above prints the best assignment of `x` and `y` that sums to 10 while maximizing their product.
 
-Variables do not need to be registered explicitly; the solver automatically discovers all variables that appear in constraints or objectives.
+Variables do not need to be registered explicitly; the solver automatically discovers all variables that appear in
+constraints or objectives.
 
 ### Z3 Solver
 
@@ -53,9 +56,9 @@ print(solver.solve())
 
 ### Objective Modes
 
-By default the solver optimizes objectives lexicographically.  To combine
+By default the solver optimizes objectives lexicographically. To combine
 multiple objectives using a weighted sum pass ``objective_mode="sum"`` when
-creating the solver.  Each call to ``maximize``/``minimize`` accepts an optional
+creating the solver. Each call to ``maximize``/``minimize`` accepts an optional
 ``weight`` parameter used in the sum.
 
 ```python
@@ -76,7 +79,7 @@ solver.prefer(x > 5, penalty=1, weight=5.0)
 ### Quantifiers
 
 `forall` and `exists` still accept a list of variables and a lambda
-function as before.  When called with only the variable list they now
+function as before. When called with only the variable list they now
 return quantifier objects that accept a predicate using `>>` or
 `.require()`.
 
@@ -93,7 +96,7 @@ exists(xs).require(lambda v: v == 2)
 
 ### When/Then Helper
 
-``when(cond).then(expr)`` builds an implication ``cond >> expr``.  This can make
+``when(cond).then(expr)`` builds an implication ``cond >> expr``. This can make
 dynamic constructions a bit clearer.
 
 ```python
@@ -106,7 +109,7 @@ rule = when(p).then(q)  # equivalent to p >> q
 ### Let Helper
 
 `let(expr).then(lambda t: predicate)` simply passes a temporary expression to
-a lambda function.  This is handy when you want to name an intermediate result
+a lambda function. This is handy when you want to name an intermediate result
 inside a constraint without creating a separate variable.
 
 ```python

@@ -1,8 +1,8 @@
 # logicdsl/solver.py
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Set
 import time
+from typing import Any, Dict, List, Set, Tuple
 
 from .core import BoolExpr, Expr, Var
 
@@ -26,7 +26,7 @@ class Soft:
 	
 	def cost(self, a: Dict[str, Any]) -> int:
 		return 0 if self.bexp.satisfied(a) else self.penalty
-
+	
 	def weighted_cost(self, a: Dict[str, Any]) -> float:
 		return 0.0 if self.bexp.satisfied(a) else self.penalty * self.weight
 
@@ -35,7 +35,7 @@ class LogicSolver:
 	"""
 	Naïve back-tracking finite-domain solver (good enough for demos).
 	"""
-
+	
 	def __init__(self, trace: bool = False, objective_mode: str = "lex"):
 		self.vars: List[Var] = []
 		self.hard: List[Tuple[str, BoolExpr]] = []
@@ -44,14 +44,14 @@ class LogicSolver:
 		self.objectives: List[Tuple[Expr, int, float]] = []
 		self.trace = trace
 		self.objective_mode = objective_mode
-
+		
 		if objective_mode not in {"lex", "sum"}:
 			raise ValueError("objective_mode must be 'lex' or 'sum'")
-
+		
 		self._best_score: Tuple[int, float | List[float]] | None = None
 		self._best_assignment: Dict[str, Any] | None = None
 		self._failed_constraints: Set[str] = set()
-
+	
 	def _ensure_vars(self, expr: Expr | BoolExpr) -> None:
 		"""Collect variables from an expression and register them."""
 		for v in collect_vars(expr):
@@ -80,7 +80,7 @@ class LogicSolver:
 		"""Add an objective to maximize ``expr`` with optional ``weight``."""
 		self._ensure_vars(expr)
 		self.objectives.append((expr, 1, float(weight)))
-
+	
 	def minimize(self, expr: Expr, weight: float = 1.0) -> None:
 		"""Add an objective to minimize ``expr`` with optional ``weight``."""
 		self._ensure_vars(expr)
@@ -93,25 +93,26 @@ class LogicSolver:
 		if self.objective_mode == "sum":
 			soft_cost = sum(s.weight * s.cost(a) for s in self.soft)
 			score = (
-				sum(
-					weight * sense * expr.eval(a)
-					for expr, sense, weight in self.objectives
-				) - soft_cost
+					sum(
+						weight * sense * expr.eval(a)
+						for expr, sense, weight in self.objectives
+					) - soft_cost
 			)
 			return penalty, score
-
+		
 		obj_vec = [sense * expr.eval(a) for expr, sense, _ in self.objectives]
 		return penalty, obj_vec
+	
 	def _better(self, new, best) -> bool:
 		if best is None:
 			return True
 		if new[0] != best[0]:
-			return new[0] < best[0]	 # lower penalty
-
+			return new[0] < best[0]  # lower penalty
+		
 		if self.objective_mode == "sum":
 			return new[1] > best[1]
-
-		return new[1] > best[1]	 # lexicographic objectives
+		
+		return new[1] > best[1]  # lexicographic objectives
 	
 	def _consistent(self, partial: Dict[str, Any]) -> bool:
 		for name, rule in self.hard:
@@ -125,20 +126,20 @@ class LogicSolver:
 		return True
 	
 	def _bt(
-		self,
-		idx: int,
-		assignment: Dict[str, Any],
-		solutions: List[Dict[str, Any]] | None = None,
-		limit: int | None = None,
-		start: float | None = None,
-		timeout: float | None = None,
+			self,
+			idx: int,
+			assignment: Dict[str, Any],
+			solutions: List[Dict[str, Any]] | None = None,
+			limit: int | None = None,
+			start: float | None = None,
+			timeout: float | None = None,
 	) -> None:
 		# treat a zero timeout as an immediate expiration
 		if start is not None and timeout is not None and time.monotonic() - start >= timeout:
 			raise TimeoutError()
 		if solutions is not None and limit is not None and len(solutions) >= limit:
 			return
-
+		
 		if idx == len(self.vars):
 			if solutions is not None:
 				penalty, obj_val = self._score(assignment)
@@ -152,7 +153,7 @@ class LogicSolver:
 					entry["objectives"] = obj_val
 				solutions.append(entry)
 				return
-
+			
 			score = self._score(assignment)
 			if self._better(score, self._best_score):
 				self._best_score = score
@@ -189,7 +190,7 @@ class LogicSolver:
 		else:
 			result["objectives"] = obj_val
 		return result
-
+	
 	def all_solutions(self, limit: int | None = None, timeout: float | None = None) -> List[Dict[str, Any]]:
 		"""Return all feasible assignments up to ``limit`` or until the timeout expires."""
 		solutions: List[Dict[str, Any]] = []
@@ -199,7 +200,7 @@ class LogicSolver:
 		except TimeoutError:
 			pass
 		return solutions
-
+	
 	def why_unsat(self) -> List[str]:
 		"""Return names of hard constraints that failed during the last search."""
 		return sorted(self._failed_constraints)

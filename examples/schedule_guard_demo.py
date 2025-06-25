@@ -2,9 +2,9 @@ from logicdsl import LogicSolver, Var
 
 # Task durations
 DUR = {
-    "A": 2,
-    "B": 1,
-    "C": 1,
+	"A": 2,
+	"B": 1,
+	"C": 1,
 }
 
 # Start time variables (0..4)

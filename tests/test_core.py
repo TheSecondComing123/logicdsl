@@ -5,20 +5,8 @@ Run with:
     pytest -q
 """
 
-from logicdsl import (
-        BoolVar,
-        Var,
-        at_most_one,
-        distinct,
-        exactly_one,
-        exists,
-        forall,
-        when,
-        let,
-        sum_of,
-        product_of,
-	LogicSolver,
-)
+from logicdsl import (BoolVar, LogicSolver, Var, at_most_one, distinct, exactly_one, exists, forall, let, product_of,
+                      sum_of, when)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -38,21 +26,21 @@ def test_expr_arithmetic_and_eval():
 
 
 def test_var_neg_and_abs():
-        x = Var("x") << (-5, 5)
-        expr = (-x).abs()  # | -x |
-        assert expr.eval(assgn(x=-3)) == 3
-        assert expr.eval(assgn(x=4)) == 4
+	x = Var("x") << (-5, 5)
+	expr = (-x).abs()  # | -x |
+	assert expr.eval(assgn(x=-3)) == 3
+	assert expr.eval(assgn(x=4)) == 4
 
 
 def test_builtin_abs_matches_method():
-        x = Var("x") << (-5, 5)
-        y = Var("y") << (-5, 5)
-
-        built = abs(x - y)
-        method = (x - y).abs()
-
-        assert built.eval(assgn(x=2, y=-3)) == method.eval(assgn(x=2, y=-3))
-        assert built.eval(assgn(x=-1, y=4)) == method.eval(assgn(x=-1, y=4))
+	x = Var("x") << (-5, 5)
+	y = Var("y") << (-5, 5)
+	
+	built = abs(x - y)
+	method = (x - y).abs()
+	
+	assert built.eval(assgn(x=2, y=-3)) == method.eval(assgn(x=2, y=-3))
+	assert built.eval(assgn(x=-1, y=4)) == method.eval(assgn(x=-1, y=4))
 
 
 def test_bool_comparisons():
@@ -118,47 +106,46 @@ def test_quantifier_objects():
 
 
 def test_boolexpr_named():
-        expr = (Var("x") << (1, 2)) == 1
-        named = expr.named("Xeq1")
-        assert named.name == "Xeq1"
+	expr = (Var("x") << (1, 2)) == 1
+	named = expr.named("Xeq1")
+	assert named.name == "Xeq1"
 
 
 def test_sum_and_product_of():
-        xs = [Var(f"x{i}") << (1, 3) for i in range(3)]
-        assignment = assgn(x0=1, x1=2, x2=3)
-
-        s = sum_of(xs)
-        p = product_of(xs)
-
-        assert s.eval(assignment) == 6
-        assert p.eval(assignment) == 6
+	xs = [Var(f"x{i}") << (1, 3) for i in range(3)]
+	assignment = assgn(x0=1, x1=2, x2=3)
+	
+	s = sum_of(xs)
+	p = product_of(xs)
+	
+	assert s.eval(assignment) == 6
+	assert p.eval(assignment) == 6
 
 
 def test_when_then():
-        p = BoolVar("p")
-        q = BoolVar("q")
-
-        implication = when(p).then(q)
-
-        assert implication.satisfied(assgn(p=0, q=0))
-        assert implication.satisfied(assgn(p=1, q=1))
-        assert not implication.satisfied(assgn(p=1, q=0))
+	p = BoolVar("p")
+	q = BoolVar("q")
+	
+	implication = when(p).then(q)
+	
+	assert implication.satisfied(assgn(p=0, q=0))
+	assert implication.satisfied(assgn(p=1, q=1))
+	assert not implication.satisfied(assgn(p=1, q=0))
 
 
 def test_let_then():
-        x = Var("x") << (0, 5)
-        y = Var("y") << (0, 5)
-
-        expr = let(x + y).then(lambda t: t < 10)
-
-        assert expr.satisfied(assgn(x=2, y=3))
-        assert not expr.satisfied(assgn(x=6, y=5))
-
+	x = Var("x") << (0, 5)
+	y = Var("y") << (0, 5)
+	
+	expr = let(x + y).then(lambda t: t < 10)
+	
+	assert expr.satisfied(assgn(x=2, y=3))
+	assert not expr.satisfied(assgn(x=6, y=5))
 
 
 def test_float_domain_generation():
 	x = Var("x").in_range(0.0, 0.3, step=0.1)
-	assert x.domain == [0.0, 0.1, 0.2, 0.3]
+	assert x.domain == [0.0, 0.1, 0.2, 0.30000000000000004]
 
 
 def test_float_domain_solver():

@@ -3,18 +3,19 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Set
 
+
 def _make_domain(lo: float, hi: float, step: float | None) -> list:
 	"""Return a list representing the inclusive domain [lo, hi] using ``step``."""
 	if step is None:
 		step = 1.0 if isinstance(lo, float) or isinstance(hi, float) else 1
-
+	
 	if step == 0:
 		raise ValueError("step must be non-zero")
-
+	
 	if (
-		isinstance(lo, float)
-		or isinstance(hi, float)
-		or isinstance(step, float)
+			isinstance(lo, float)
+			or isinstance(hi, float)
+			or isinstance(step, float)
 	):
 		try:
 			import numpy as np  # type: ignore
@@ -32,8 +33,10 @@ def _make_domain(lo: float, hi: float, step: float | None) -> list:
 					dom.append(round(val, 10))
 					val += step
 			return dom
-
+	
 	return list(range(int(lo), int(hi) + 1, int(step)))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 class Expr:
 	"""
@@ -52,11 +55,11 @@ class Expr:
 	@staticmethod
 	def _E(v: Any) -> "Expr":  # coerce Var/int/float → Expr
 		if isinstance(v, Expr):
-		        return v
+			return v
 		if isinstance(v, Var):
-		        return v.expr
+			return v.expr
 		if isinstance(v, (int, float)):
-		        return Expr(lambda a, val=v: val, vars=set())
+			return Expr(lambda a, val=v: val, vars=set())
 		raise TypeError(f"Unsupported operand type: {type(v)}")
 	
 	@staticmethod
@@ -66,42 +69,52 @@ class Expr:
 	
 	# ------------------------------------------------------------ arithmetic ops
 	def __add__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x + y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x + y)
 	
 	__radd__ = __add__
 	
 	def __sub__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x - y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x - y)
 	
 	def __rsub__(self, o):
-		o = Expr._E(o); return Expr._bin((o, self), lambda x, y: x - y)
+		o = Expr._E(o);
+		return Expr._bin((o, self), lambda x, y: x - y)
 	
 	def __mul__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x * y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x * y)
 	
 	__rmul__ = __mul__
 	
 	def __truediv__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x / y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x / y)
 	
 	def __floordiv__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x // y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x // y)
 	
 	# NEW: modulo
 	def __mod__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x % y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x % y)
 	
 	def __rmod__(self, o):
-		o = Expr._E(o); return Expr._bin((o, self), lambda x, y: x % y)
+		o = Expr._E(o);
+		return Expr._bin((o, self), lambda x, y: x % y)
 	
 	def __pow__(self, o):
-		o = Expr._E(o); return Expr._bin((self, o), lambda x, y: x ** y)
+		o = Expr._E(o);
+		return Expr._bin((self, o), lambda x, y: x ** y)
 	
 	def __neg__(self):
 		return Expr(lambda a, s=self: -s.eval(a), vars=self._vars)
+	
 	def __abs__(self):
 		return self.abs()
-
+	
 	def abs(self):
 		return Expr(lambda a, s=self: abs(s.eval(a)), vars=self._vars)
 	
@@ -167,7 +180,9 @@ class BoolExpr:
 	__ror__ = __or__
 	
 	def __invert__(self):
-                return BoolExpr(lambda a, s=self: (~s.satisfied(a)) if not isinstance(s.satisfied(a), bool) else (not s.satisfied(a)), vars=self._vars)
+		return BoolExpr(
+			lambda a, s=self: (~s.satisfied(a)) if not isinstance(s.satisfied(a), bool) else (not s.satisfied(a)),
+			vars=self._vars)
 	
 	def __xor__(self, o):
 		o = BoolExpr._B(o)
@@ -176,11 +191,15 @@ class BoolExpr:
 	# implication  (self >> o)
 	def __rshift__(self, o):
 		o = BoolExpr._B(o)
-		return BoolExpr(lambda a, s=self, t=o: (~s.satisfied(a)) if not isinstance(s.satisfied(a), bool) else (not s.satisfied(a)) | t.satisfied(a), vars=self._vars | o._vars)
+		return BoolExpr(lambda a, s=self, t=o: (~s.satisfied(a)) if not isinstance(s.satisfied(a), bool) else (
+			                                                                                                      not s.satisfied(
+				                                                                                                      a)) | t.satisfied(
+			a), vars=self._vars | o._vars)
+	
 	def named(self, name: str) -> "BoolExpr":
 		"""Return a copy of this BoolExpr with a different name."""
 		return BoolExpr(self._f, name, vars=self._vars)
-
+	
 	def __repr__(self) -> str:
 		return f"BoolExpr({self.name})"
 
@@ -195,7 +214,7 @@ class Var:
 		self.name = name
 		self.domain = None
 		self.expr = Expr(lambda a, n=name: a[n], vars={self})
-
+	
 	def __hash__(self) -> int:
 		return hash(self.name)
 	
@@ -210,7 +229,7 @@ class Var:
 		else:
 			raise ValueError(f"Bad domain for {self.name}")
 		return self
-
+	
 	def in_range(self, lo: float, hi: float, step: float | None = None):
 		self.domain = _make_domain(lo, hi, step)
 		return self
@@ -256,6 +275,7 @@ class Var:
 	
 	def __neg__(self):
 		return -self.expr
+	
 	def __abs__(self):
 		return abs(self.expr)
 	

@@ -4,7 +4,7 @@ Integration tests for logicdsl.solver.
 
 import pytest
 
-from logicdsl import LogicSolver, Var, distinct, sum_of, product_of
+from logicdsl import LogicSolver, Var, distinct, product_of, sum_of
 
 
 def test_basic_optimal_solution():
@@ -60,7 +60,7 @@ def test_distinct_constraint_in_solver():
 	S = LogicSolver()
 	S.require(distinct([a, b, c]), "all_diff")
 	S.maximize(sum_of([a, b, c]))
-		
+	
 	sol = S.solve()
 	values = list(sol["assignment"].values())
 	assert sorted(values) == [1, 2, 3]
@@ -77,7 +77,7 @@ def test_unsat_raises():
 	y = Var("y") << {2}
 	S = LogicSolver()
 	S.require(sum_of([x, y]) == 100, "impossible")
-
+	
 	with pytest.raises(RuntimeError):
 		S.solve()
 
@@ -86,10 +86,10 @@ def test_all_solutions_limit():
 	"""Enumerate first two solutions to x + y == 4 with x,y in [1..3]."""
 	x = Var("x") << (1, 3)
 	y = Var("y") << (1, 3)
-
+	
 	S = LogicSolver()
 	S.require(sum_of([x, y]) == 4)
-
+	
 	sols = S.all_solutions(limit=2)
 	assert len(sols) == 2
 	assert sols[0]["assignment"] == {"x": 1, "y": 3}
@@ -99,11 +99,11 @@ def test_all_solutions_limit():
 def test_all_solutions_penalty_and_objective():
 	"""Return solutions with penalties and objective values included."""
 	x = Var("x") << {0, 1}
-
+	
 	S = LogicSolver()
 	S.prefer(x == 1, penalty=5)
 	S.maximize(x)
-
+	
 	sols = S.all_solutions()
 	assert len(sols) == 2
 	# first assignment should be x=0 (penalty 5)
@@ -120,41 +120,41 @@ def test_objective_mode_sum():
 	"""Weighted-sum objectives choose different assignment than lexicographic."""
 	x = Var("x") << {0, 1}
 	y = Var("y") << {0, 1}
-
+	
 	constraint = sum_of([x, y]) <= 1
-
+	
 	S_lex = LogicSolver()
 	S_lex.require(constraint)
 	S_lex.maximize(x)
 	S_lex.maximize(y)
-
+	
 	sol_lex = S_lex.solve()
 	assert sol_lex["assignment"] == {"x": 1, "y": 0}
-
+	
 	S_sum = LogicSolver(objective_mode="sum")
 	S_sum.require(constraint)
 	S_sum.maximize(x, weight=1)
 	S_sum.maximize(y, weight=2)
-
+	
 	sol_sum = S_sum.solve()
 	assert sol_sum["assignment"] == {"x": 0, "y": 1}
 	assert sol_sum["objective"] == 2
 
 
 def test_soft_weights_with_sum_mode():
-	        """Weighted soft constraints influence tie-breaking when using sum mode."""
-	        x = Var("x") << {0, 1}
-	        y = Var("y") << {0, 1}
+	"""Weighted soft constraints influence tie-breaking when using sum mode."""
+	x = Var("x") << {0, 1}
+	y = Var("y") << {0, 1}
 	
-	        S = LogicSolver(objective_mode="sum")
-	        S.require(sum_of([x, y]) == 1)
-	        S.prefer(x == 1, penalty=1, weight=5.0)
-	        S.prefer(y == 1, penalty=1, weight=1.0)
+	S = LogicSolver(objective_mode="sum")
+	S.require(sum_of([x, y]) == 1)
+	S.prefer(x == 1, penalty=1, weight=5.0)
+	S.prefer(y == 1, penalty=1, weight=1.0)
 	
-	        sol = S.solve()
-	        assert sol["assignment"] == {"x": 1, "y": 0}
-	        assert sol["penalty"] == 1
-	        assert sol["objective"] == -1
+	sol = S.solve()
+	assert sol["assignment"] == {"x": 1, "y": 0}
+	assert sol["penalty"] == 1
+	assert sol["objective"] == -1
 
 
 def test_solve_timeout():
@@ -167,7 +167,7 @@ def test_solve_timeout():
 	
 	with pytest.raises(TimeoutError):
 		S.solve(timeout=0.0)
-	
+
 
 def test_all_solutions_timeout_returns_partial():
 	"""all_solutions returns any found solutions when timing out."""
