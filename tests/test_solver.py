@@ -178,3 +178,14 @@ def test_all_solutions_timeout_returns_partial():
 	
 	sols = S.all_solutions(timeout=0.0)
 	assert sols == []
+
+
+def test_require_all():
+	xs = [Var(f"x{i}") << (0, 3) for i in range(3)]
+
+	S = LogicSolver()
+	S.require_all(lambda v: v < 2, xs)
+	S.require(sum_of(xs) == 3)
+
+	sol = S.solve()
+	assert sol["assignment"] == {f"x{i}": 1 for i in range(3)}

@@ -42,6 +42,11 @@ class Z3Solver:
         self._ensure_vars(bexp)
         self.hard.append((name or bexp.name, bexp))
 
+    def require_all(self, pred, vs) -> None:
+        """Apply ``pred`` to each variable and add the resulting constraints."""
+        for v in vs:
+            self.require(pred(v))
+
     def prefer(self, bexp: BoolExpr, penalty: int = 1, weight: float = 1.0, name: str | None = None) -> None:
         self._ensure_vars(bexp)
         self.soft.append(Soft(bexp, penalty, weight, name))
