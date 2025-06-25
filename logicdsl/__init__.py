@@ -35,6 +35,7 @@ def when(cond: BoolExpr | Var) -> _ImplicationBuilder:
 
 from .solver import LogicSolver, Soft
 from .z3solver import Z3Solver
+from .tagset import TagSet
 
 
 class _LetBuilder:
@@ -76,9 +77,10 @@ __all__ = [
 	"forall",
 	"exists",
 	"sum_of",
-	"product_of",
-	# solver
-	"LogicSolver",
+        "product_of",
+       "TagSet",
+        # solver
+        "LogicSolver",
 	"Z3Solver",
 	"Soft",
 ]
