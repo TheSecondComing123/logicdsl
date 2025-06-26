@@ -119,3 +119,12 @@ y = Var("y") << (0, 5)
 constraint = let(x + y).then(lambda t: t < 7)
 ```
 
+### `require_if` Convenience
+
+Both solver classes provide `require_if(cond, expr)` which simply adds the
+implication `cond >> expr` as a hard constraint.
+
+```python
+solver.require_if(p, q)  # adds p >> q
+```
+
