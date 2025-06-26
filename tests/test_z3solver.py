@@ -1,6 +1,6 @@
 import pytest
 
-from logicdsl import LogicSolver, Var, Z3Solver, product_of, sum_of
+from logicdsl import BoolVar, LogicSolver, Var, Z3Solver, product_of, sum_of
 
 
 @pytest.mark.parametrize("Solver", [LogicSolver, Z3Solver])
@@ -27,6 +27,16 @@ def test_all_solutions_limit(Solver):
     assigns = [s["assignment"] for s in sols]
     for a in assigns:
         assert a["x"] + a["y"] == 4
+
+
+def test_require_if():
+	S = LogicSolver()
+	p = BoolVar("p")
+	q = BoolVar("q")
+	S.require(p == 1)
+	S.require_if(p, q)
+	sol = S.solve()
+	assert sol["assignment"] == {"p": 1, "q": 1}
 
 
 def test_z3solver_timeout_solve():

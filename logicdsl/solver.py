@@ -76,6 +76,9 @@ class LogicSolver:
 		"""Apply ``pred`` to each variable and add the resulting constraints."""
 		for v in vs:
 			self.require(pred(v))
+	def require_if(self, cond: BoolExpr | Var, expr: BoolExpr | Var, name: str | None = None) -> None:
+		"""Add implication ``cond >> expr`` as a hard constraint."""
+		self.require(BoolExpr._B(cond) >> BoolExpr._B(expr), name)
 	
 	def prefer(self, bexp: BoolExpr, penalty: int = 1, weight: float = 1.0, name: str | None = None) -> None:
 		self._ensure_vars(bexp)
